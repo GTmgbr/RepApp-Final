@@ -93,7 +93,6 @@ export const Input = forwardRef(
               { width: calculateSizeWidth(), height: "100%" },
             ]}
             ref={ref}
-            multiline
             {...rest}
           />
           {IconRigth && iconRightName && (
