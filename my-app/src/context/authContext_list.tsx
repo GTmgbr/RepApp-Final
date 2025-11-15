@@ -2,7 +2,6 @@ import React, {
   createContext,
   useContext,
   useRef,
-  useEffect,
   useState,
 } from "react";
 import {
@@ -46,10 +45,6 @@ export const AuthProviderList = (props: any): any => {
   const onClose = () => {
     modalizeRef?.current.close();
   };
-
-  useEffect(() => {
-    onOpen();
-  }, []);
 
   const handleDateChange = (date) => {
     setSelectedDate(date);

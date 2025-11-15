@@ -1,62 +1,100 @@
-import React, { useContext } from "react";
-import { TouchableOpacity, View } from "react-native";
-import {
-  FontAwesome,
-  Entypo,
-  AntDesign,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import React from "react";
+import { TouchableOpacity, View, Text } from "react-native";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
-import { AuthContextList } from "../../context/authContext_list";
 
-// import { AuthContextList } from "../../context/authContext_list";
-// const { onOpen } = useContext<any>(AuthContextList);
-
-export default ({ state, navigation }) => {
-  const { onOpen } = useContext<any>(AuthContextList);
-
+export default ({ state, navigation }: BottomTabBarProps) => {
   const go = (screenName: string) => {
     navigation.navigate(screenName);
   };
 
+  const tabs = [
+    {
+      name: "Home",
+      label: "Inicio",
+      icon: (focused: boolean) => (
+        <MaterialIcons
+          name="home"
+          size={24}
+          color={focused ? themas.colors.primary : themas.colors.gray}
+        />
+      ),
+    },
+    {
+      name: "Financas",
+      label: "Financas",
+      icon: (focused: boolean) => (
+        <MaterialIcons
+          name="account-balance-wallet"
+          size={24}
+          color={focused ? themas.colors.primary : themas.colors.gray}
+        />
+      ),
+    },
+    {
+      name: "Tarefas",
+      label: "Tarefas",
+      icon: (focused: boolean) => (
+        <MaterialIcons
+          name="checklist"
+          size={24}
+          color={focused ? themas.colors.primary : themas.colors.gray}
+        />
+      ),
+    },
+    {
+      name: "Agenda",
+      label: "Agenda",
+      icon: (focused: boolean) => (
+        <MaterialIcons
+          name="event"
+          size={24}
+          color={focused ? themas.colors.primary : themas.colors.gray}
+        />
+      ),
+    },
+    {
+      name: "Avisos",
+      label: "Avisos",
+      icon: (focused: boolean) => (
+        <Ionicons
+          name="megaphone"
+          size={24}
+          color={focused ? themas.colors.primary : themas.colors.gray}
+        />
+      ),
+    },
+  ];
+
   return (
     <View style={style.TabArea}>
-      <TouchableOpacity style={style.TabItem} onPress={() => go("List")}>
-        <AntDesign
-          name="bars"
-          style={{
-            opacity: state.index === 0 ? 1 : 0.5,
-            color: "#1E5620",
-            fontSize: 32,
-          }}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity style={style.TabItemButton} onPress={() => onOpen()}>
-        <View style={{ width: "100%", left: 10, top: 4 }}>
-          <Entypo name="plus" style={{ color: "#FFF" }} size={40} />
-        </View>
-        <View
-          style={{
-            flexDirection: "row-reverse",
-            width: "100%",
-            right: 10,
-            bottom: 10,
-          }}
-        >
-          <MaterialIcons name="edit" style={{ color: "#FFF" }} size={30} />
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity style={style.TabItem} onPress={() => go("User")}>
-        <FontAwesome
-          name="user-circle-o"
-          style={{
-            opacity: state.index === 1 ? 1 : 0.2,
-            color: "#1E5620",
-            fontSize: 32,
-          }}
-        />
-      </TouchableOpacity>
+      {tabs.map((tab, index) => {
+        const isFocused = state.index === index;
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            style={style.TabItem}
+            onPress={() => go(tab.name)}
+            activeOpacity={0.7}
+          >
+            <View style={style.TabItemContent}>
+              {tab.icon(isFocused)}
+              <Text
+                style={[
+                  style.TabItemLabel,
+                  {
+                    color: isFocused ? themas.colors.primary : themas.colors.gray,
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };

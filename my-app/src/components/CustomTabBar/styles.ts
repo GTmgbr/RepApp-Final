@@ -3,39 +3,34 @@ import { themas } from "../../global/themes";
 
 export const style = StyleSheet.create({
   TabArea: {
-    height: 120,
+    height: 70,
     backgroundColor: "#FFF",
     flexDirection: "row",
-    borderTopColor: "black",
+    borderTopWidth: 1,
+    borderTopColor: themas.colors.lightGray,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 3,
+      height: -2,
     },
-    shadowOpacity: 0.29,
-    shadowRadius: 4.65,
-    elevation: 7,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    paddingBottom: 5,
   },
   TabItem: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 40,
+    paddingVertical: 8,
   },
-  TabItemButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 40,
-    justifyContent: "center",
+  TabItemContent: {
     alignItems: "center",
-    // borderWidth:1,
-    top: -30,
-    zIndex: 9999,
-    backgroundColor: "#1E5620",
-    // paddingHorizontal:20
+    justifyContent: "center",
   },
-  row: {
-    width: "100%",
-    paddingHorizontal: 2,
+  TabItemLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: "500",
   },
 });
