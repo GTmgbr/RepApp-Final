@@ -5,9 +5,13 @@ Aplicativo criado para centralizar a organização da vida em repúblicas estuda
 ## 🚀 Funcionalidades Principais
 
 •Gestão da República: criação da rep, convites e controle de permissões (ADM/Membro).
+
 •Finanças: registro e divisão de despesas, histórico e balanço entre moradores.
+
 •Tarefas: quadro de tarefas com recorrência, atribuição e conclusão.
+
 •Agenda: eventos e lembretes compartilhados.
+
 •Mural de Avisos: comunicados importantes fixos e organizados.
 
 ## 🎯 Objetivo
