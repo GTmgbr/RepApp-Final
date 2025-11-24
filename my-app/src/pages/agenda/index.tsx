@@ -28,7 +28,7 @@ const EVENTOS_MOCK: Evento[] = [
   {
     id: 1,
     titulo: "Churrasco da Rep",
-    data: new Date(2025, 0, 15),
+    data: new Date(2025, 11, 15),
     hora: "18:00",
     local: "Área da churrasqueira",
     tipo: "churrasco",
@@ -38,7 +38,7 @@ const EVENTOS_MOCK: Evento[] = [
   {
     id: 2,
     titulo: "Aniversário da Maria",
-    data: new Date(2025, 0, 18),
+    data: new Date(2025, 11, 25),
     hora: "20:00",
     local: "Sala de estar",
     tipo: "aniversario",
@@ -48,7 +48,7 @@ const EVENTOS_MOCK: Evento[] = [
   {
     id: 3,
     titulo: "Faxina Geral",
-    data: new Date(2025, 0, 25),
+    data: new Date(2025, 11, 28),
     hora: "09:00",
     local: "Toda a casa",
     tipo: "faxina",
@@ -264,9 +264,7 @@ export default function Agenda() {
                         </Text>
                       </View>
                       {temEventos && (
-                        <View style={styles.eventDot}>
-                          <Text style={styles.eventDotText}>•</Text>
-                        </View>
+                        <View style={styles.eventDot} />
                       )}
                     </>
                   )}
@@ -451,6 +449,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
     fontWeight: "500",
+    zIndex: 2,
   },
   dayTodayText: {
     color: "#FFF",
@@ -458,11 +457,13 @@ const styles = StyleSheet.create({
   },
   eventDot: {
     position: "absolute",
-    bottom: 4,
-  },
-  eventDotText: {
-    fontSize: 16,
-    color: "#FFD700",
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 100,
+    backgroundColor: "#FFD700",
+    alignSelf: "center",
+    zIndex: 1,
   },
   upcomingSection: {
     paddingHorizontal: 16,
