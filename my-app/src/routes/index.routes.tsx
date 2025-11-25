@@ -6,6 +6,7 @@ import RegisterUser from "../pages/registerUser";
 import Access from "../pages/first access";
 import BottomRoutes from "./bottom.routes";
 import settings from "../pages/settings/settings";
+import AdicionarDespesa from "../pages/financas/AdicionarDespesa";
 import { themas } from "../global/themes";
 
 const Stack = createStackNavigator();
@@ -27,6 +28,7 @@ export default function Routes() {
       <Stack.Screen name="Access" component={Access} />
       <Stack.Screen name="MainTabs" component={BottomRoutes} />
       <Stack.Screen name="Settings" component={settings} />
+      <Stack.Screen name="AdicionarDespesa" component={AdicionarDespesa} />
     </Stack.Navigator>
   );
 }

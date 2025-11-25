@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   Text,
@@ -6,11 +6,16 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
+import { getDashboardStats, getHistoricoAtividades } from "../../services/dashboardService";
+import { DashboardStatsDTO, HistoricoResponseDTO } from "../../types/dashboard.types";
 
 const { width } = Dimensions.get("window");
 
@@ -19,31 +24,63 @@ const userData = {
   profileImage: null,
 };
 
-const balanceData = {
-  total: 1247.5,
-  received: 320,
-  spent: 180,
-};
-
-const upcomingTasks = [
-  { id: 1, title: "Limpeza da cozinha", assignedTo: "Maria", date: "Hoje, 14:00", priority: "high" },
-  { id: 2, title: "Compras do mes", assignedTo: "Pedro", date: "Amanha, 10:00", priority: "medium" },
-  { id: 3, title: "Reunião mensal", assignedTo: "Todos", date: "22 Set, 19:00", priority: "low" },
-];
-
-const recentActivities = [
-  { id: 1, user: "Ana", action: "adicionou uma nova despesa", details: "Supermercado - R$ 85,40", time: "há 2h", profileImage: null },
-  { id: 2, user: "Carlos", action: "completou uma tarefa", details: "Limpeza do banheiro", time: "há 4h", profileImage: null },
-  { id: 3, user: "Luisa", action: "criou um evento", details: "Churrasco de domingo", time: "ontem", profileImage: null },
-];
-
-const summaryData = {
-  tasksCompleted: 12,
-  newExpenses: 8,
-};
+// Mock de tarefas - será substituído quando o módulo de tarefas estiver pronto
+const upcomingTasks: any[] = [];
 
 export default function Dashboard() {
   const navigation = useNavigation();
+
+  // Estados para dados do backend
+  const [stats, setStats] = useState<DashboardStatsDTO | null>(null);
+  const [atividades, setAtividades] = useState<HistoricoResponseDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Função para carregar dados do backend
+  const loadDashboardData = async () => {
+    try {
+      const repId = await AsyncStorage.getItem("repId");
+
+      if (!repId) {
+        console.error("RepId não encontrado no AsyncStorage");
+        return;
+      }
+
+      const [statsData, atividadesData] = await Promise.all([
+        getDashboardStats(Number(repId)),
+        getHistoricoAtividades(Number(repId)),
+      ]);
+
+      setStats(statsData);
+      setAtividades(atividadesData);
+    } catch (error) {
+      console.error("Erro ao carregar dados do dashboard:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Carregar dados ao montar componente
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Função de refresh (pull to refresh)
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadDashboardData();
+  };
+
+  // Mostrar loading enquanto carrega
+  if (loading) {
+    return (
+      <View style={[style.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={themas.colors.primary} />
+        <Text style={{ marginTop: 10, color: themas.colors.gray }}>Carregando dashboard...</Text>
+      </View>
+    );
+  }
 
   const formatCurrency = (value: number) => {
     return `R$${value.toFixed(2).replace(".", ",")}`;
@@ -75,7 +112,13 @@ export default function Dashboard() {
 
   return (
     <View style={style.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={style.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={style.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         
         {/* HEADER */}
         <View style={style.header}>
@@ -129,16 +172,22 @@ export default function Dashboard() {
             <Text style={style.balanceTitle}>Saldo da Republica</Text>
             <MaterialIcons name="account-balance-wallet" size={24} color="#FFF" />
           </View>
-          <Text style={style.balanceAmount}>{formatCurrency(balanceData.total)}</Text>
+          <Text style={style.balanceAmount}>
+            {formatCurrency(stats?.saldoAtual ?? 0)}
+          </Text>
 
           <View style={style.balanceDetails}>
             <View style={style.balanceItem}>
               <MaterialIcons name="arrow-upward" size={16} color="#4CAF50" />
-              <Text style={style.balanceReceived}>R$ {balanceData.received} recebidos</Text>
+              <Text style={style.balanceReceived}>
+                {formatCurrency(stats?.totalEntradasMes ?? 0)} recebidos
+              </Text>
             </View>
             <View style={style.balanceItem}>
               <MaterialIcons name="arrow-downward" size={16} color={themas.colors.red} />
-              <Text style={style.balanceSpent}>R$ {balanceData.spent} gastos</Text>
+              <Text style={style.balanceSpent}>
+                {formatCurrency(stats?.totalSaidasMes ?? 0)} gastos
+              </Text>
             </View>
           </View>
         </View>
@@ -198,23 +247,36 @@ export default function Dashboard() {
         <View style={style.section}>
           <Text style={style.sectionTitle}>Atividade Recente</Text>
 
-          {recentActivities.map((activity) => (
-            <View key={activity.id} style={style.activityCard}>
-              <View style={style.activityProfile}>
-                <View style={style.activityProfilePlaceholder}>
-                  <MaterialIcons name="person" size={16} color="#FFF" />
+          {atividades.length > 0 ? (
+            atividades.map((atividade, index) => (
+              <View key={index} style={style.activityCard}>
+                <View style={style.activityProfile}>
+                  {atividade.fotoAutor ? (
+                    <Image
+                      source={{ uri: atividade.fotoAutor }}
+                      style={style.profileImage}
+                    />
+                  ) : (
+                    <View style={style.activityProfilePlaceholder}>
+                      <MaterialIcons name="person" size={16} color="#FFF" />
+                    </View>
+                  )}
+                </View>
+
+                <View style={style.activityContent}>
+                  <Text style={style.activityText}>
+                    <Text style={style.activityUserName}>{atividade.titulo}</Text>
+                  </Text>
+                  <Text style={style.activityDetails}>{atividade.descricao}</Text>
+                  <Text style={style.activityTime}>{atividade.tempoDecorrido}</Text>
                 </View>
               </View>
-
-              <View style={style.activityContent}>
-                <Text style={style.activityText}>
-                  <Text style={style.activityUserName}>{activity.user}</Text> {activity.action}
-                </Text>
-                <Text style={style.activityDetails}>{activity.details}</Text>
-                <Text style={style.activityTime}>{activity.time}</Text>
-              </View>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={{ textAlign: "center", color: themas.colors.gray, marginTop: 10 }}>
+              Nenhuma atividade recente
+            </Text>
+          )}
         </View>
 
         {/* RESUMO */}
@@ -224,7 +286,7 @@ export default function Dashboard() {
               <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
             </View>
             <Text style={style.summaryPeriod}>Esta semana</Text>
-            <Text style={style.summaryNumber}>{summaryData.tasksCompleted}</Text>
+            <Text style={style.summaryNumber}>{stats?.tarefasConcluidasSemana ?? 0}</Text>
             <Text style={style.summaryLabel}>Tarefas concluídas</Text>
           </View>
 
@@ -233,7 +295,7 @@ export default function Dashboard() {
               <MaterialIcons name="receipt" size={24} color={themas.colors.primary} />
             </View>
             <Text style={style.summaryPeriod}>Este mês</Text>
-            <Text style={style.summaryNumber}>{summaryData.newExpenses}</Text>
+            <Text style={style.summaryNumber}>{stats?.despesasCriadasMes ?? 0}</Text>
             <Text style={style.summaryLabel}>Novas despesas</Text>
           </View>
         </View>
