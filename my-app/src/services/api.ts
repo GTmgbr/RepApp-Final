@@ -3,14 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Substitua pelo IP da sua máquina ou localhost adequado
 const api = axios.create({
-  baseURL: "http://192.168.0.100:8080/api", 
+  baseURL: "http://10.0.0.101:8081/api", 
 });
 
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+
+    // --- MUDANÇA AQUI ---
+    // Se não tiver token real (login não feito), usa esse token falso para não travar suas requisições
+    const tokenFinal = token || "TOKEN_MOCK_PESSOA_2"; 
+    
+    if (tokenFinal) {
+      config.headers.Authorization = `Bearer ${tokenFinal}`;
     }
     return config;
   },
