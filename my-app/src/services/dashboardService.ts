@@ -1,29 +1,14 @@
 import api from "./api";
-import {
-  DashboardStatsDTO,
-  HistoricoResponseDTO,
-} from "../types/dashboard.types";
+import { DashboardStatsDTO, HistoricoResponseDTO } from "../types/dashboard.types";
 
-/**
- * Obtém as estatísticas gerais do dashboard
- * @param repId - ID da república
- * @returns Estatísticas do dashboard (saldos, receitas, despesas, tarefas)
- */
-export const getDashboardStats = async (
-  repId: number
-): Promise<DashboardStatsDTO> => {
-  const response = await api.get(`/reps/${repId}/dashboard/stats`);
+const BASE_URL = (repId: number) => `/reps/${repId}/dashboard`;
+
+export const getDashboardStats = async (repId: number): Promise<DashboardStatsDTO> => {
+  const response = await api.get(`${BASE_URL(repId)}/stats`);
   return response.data;
 };
 
-/**
- * Obtém o histórico de atividades recentes da república
- * @param repId - ID da república
- * @returns Array de atividades recentes (tarefas, despesas, eventos, avisos)
- */
-export const getHistoricoAtividades = async (
-  repId: number
-): Promise<HistoricoResponseDTO[]> => {
-  const response = await api.get(`/reps/${repId}/dashboard/atividades`);
+export const getAtividadesRecentes = async (repId: number): Promise<HistoricoResponseDTO[]> => {
+  const response = await api.get(`${BASE_URL(repId)}/atividades`);
   return response.data;
 };

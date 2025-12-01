@@ -1,76 +1,106 @@
 import { StyleSheet, Dimensions } from "react-native";
-import { themas } from "../../global/themes";
+
+const { width } = Dimensions.get("window");
+
+// Paleta de Colores del Figma
+const colors = {
+  primary: "#0066ff", // Azul/Morado intenso del header y botones
+  background: "#F0F2F5", // Gris claro de fondo
+  card: "#FFFFFF", // Blanco del contenedor
+  textDark: "#2F2E41", // Texto oscuro para preguntas
+  textLight: "#FFFFFF", // Texto claro para el header
+  textGray: "#666666", // Texto gris para el footer
+};
 
 export const style = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
   },
   header: {
     width: "100%",
-    height: Dimensions.get("window").height / 4.5,
-    backgroundColor: "#1E5620",
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    paddingHorizontal: 20,
+    height: 200,
+    backgroundColor: colors.primary,
     justifyContent: "center",
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 20,
   },
   subtitle: {
-    fontSize: 14,
-    color: "white",
-    marginLeft: 10,
+    color: colors.textLight,
+    fontSize: 16,
+    fontWeight: "400",
   },
   title: {
-    fontSize: 24,
+    color: colors.textLight,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "white",
-    marginTop: 4,
-    marginLeft: 10,
+    marginTop: 5,
   },
   content: {
-    marginTop: 70,
     flex: 1,
-    padding: 20,
-    alignItems: "center",
+    backgroundColor: colors.card,
+    marginHorizontal: 20,
+    marginTop: -40,
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   question: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 20,
-    marginLeft: -90,
-    textAlign: "center",
+    color: colors.textDark,
+    marginBottom: 10,
   },
   link: {
     fontSize: 15,
-    color: "#0F7B4A",
-    textAlign: "left",
-    marginLeft: -50,
-  },
-  button: {
-    marginTop: 130,
-    backgroundColor: "#103C1F",
-    padding: 15,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    width: 150,
-    elevation: 10,
-  },
-  footer: {
-    fontSize: 12,
-    color: "#000",
-    textAlign: "center",
-    marginTop: 30,
-  },
-  footerLink: {
-    color: "#0F7B4A",
-    textDecorationLine: "underline",
+    color: colors.primary,
+    lineHeight: 22,
+    marginLeft: 10,
+    marginBottom: 15,
   },
   buttonLabel: {
-  fontSize: 16,
-  fontWeight: "bold",
-  marginTop: 10,
-  marginBottom: -120,
-  textAlign: "center",
-},
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+    color: colors.primary,
+    marginTop: 20,
+    marginBottom: 15,
+  },
+  button: {
+    width: 60,
+    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 30,
+    shadowColor: colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  footer: {
+    textAlign: "center",
+    fontSize: 13,
+    color: colors.textGray,
+    lineHeight: 20,
+  },
+  footerLink: {
+    fontWeight: "bold",
+    color: colors.primary,
+  },
 });

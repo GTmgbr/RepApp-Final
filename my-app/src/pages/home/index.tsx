@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ScrollView,
   Text,
@@ -10,103 +10,112 @@ import {
   RefreshControl,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { style } from "./styles";
 import { themas } from "../../global/themes";
-import { getDashboardStats, getHistoricoAtividades } from "../../services/dashboardService";
+import { getDashboardStats, getAtividadesRecentes } from "../../services/dashboardService";
+import { getTarefasDashboard } from "../../services/tarefaService";
 import { DashboardStatsDTO, HistoricoResponseDTO } from "../../types/dashboard.types";
+import { TarefaDTO } from "../../types/tarefas.types";
 
 const { width } = Dimensions.get("window");
-
-const userData = {
-  name: "Joao",
-  profileImage: null,
-};
-
-// Mock de tarefas - será substituído quando o módulo de tarefas estiver pronto
-const upcomingTasks: any[] = [];
 
 export default function Dashboard() {
   const navigation = useNavigation();
 
-  // Estados para dados do backend
   const [stats, setStats] = useState<DashboardStatsDTO | null>(null);
   const [atividades, setAtividades] = useState<HistoricoResponseDTO[]>([]);
+  const [tarefasDashboard, setTarefasDashboard] = useState<TarefaDTO[]>([]);
+  const [userName, setUserName] = useState("Morador");
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Função para carregar dados do backend
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [])
+  );
+
   const loadDashboardData = async () => {
     try {
-      const repId = await AsyncStorage.getItem("repId");
+      const repId = await AsyncStorage.getItem("@repId");
+      const usuarioJson = await AsyncStorage.getItem("@usuario");
+
+      if (usuarioJson) {
+        const usuario = JSON.parse(usuarioJson);
+        setUserName(usuario.nome || "Morador");
+      }
 
       if (!repId) {
-        console.error("RepId não encontrado no AsyncStorage");
+        console.error("RepId não encontrado");
         return;
       }
 
-      const [statsData, atividadesData] = await Promise.all([
+      const [statsData, atividadesData, tarefasData] = await Promise.all([
         getDashboardStats(Number(repId)),
-        getHistoricoAtividades(Number(repId)),
+        getAtividadesRecentes(Number(repId)),
+        getTarefasDashboard(Number(repId))
       ]);
 
       setStats(statsData);
       setAtividades(atividadesData);
+      setTarefasDashboard(tarefasData);
+
     } catch (error) {
-      console.error("Erro ao carregar dados do dashboard:", error);
+      console.error("Erro ao carregar dashboard:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Carregar dados ao montar componente
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  // Função de refresh (pull to refresh)
   const onRefresh = () => {
     setRefreshing(true);
     loadDashboardData();
   };
 
-  // Mostrar loading enquanto carrega
   if (loading) {
     return (
       <View style={[style.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color={themas.colors.primary} />
-        <Text style={{ marginTop: 10, color: themas.colors.gray }}>Carregando dashboard...</Text>
+        <Text style={{ marginTop: 10, color: themas.colors.gray }}>Carregando...</Text>
       </View>
     );
   }
 
-  const formatCurrency = (value: number) => {
-    return `R$${value.toFixed(2).replace(".", ",")}`;
-  };
+  const formatCurrency = (value: number) => `R$${value.toFixed(2).replace(".", ",")}`;
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "high": return themas.colors.red;
-      case "medium": return "#FFA500";
-      case "low": return "#4CAF50";
+      case "URGENTE": return themas.colors.red;
+      case "ALTA": return "#FF5252";
+      case "MEDIA": return "#FFA500";
+      case "BAIXA": return "#4CAF50";
       default: return themas.colors.gray;
     }
   };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case "high": return "error";
-      case "medium": return "schedule";
-      case "low": return "people";
+      case "URGENTE": return "error";
+      case "ALTA": return "warning";
+      case "MEDIA": return "schedule";
+      case "BAIXA": return "check-circle";
       default: return "info";
     }
   };
 
+  const formatDate = (isoDate: string) => {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  };
+
   const getCurrentDate = () => {
     const date = new Date();
-    const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     return `${date.getDate()} ${months[date.getMonth()]}, ${date.getFullYear()}`;
   };
 
@@ -119,7 +128,7 @@ export default function Dashboard() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        
+
         {/* HEADER */}
         <View style={style.header}>
           <View style={style.headerTop}>
@@ -135,29 +144,21 @@ export default function Dashboard() {
                 <MaterialIcons name="notifications" size={24} color="#000" />
               </TouchableOpacity>
 
-              {/* BOTÃO DO PERFIL / CONFIGURAÇÕES */}
               <TouchableOpacity
                 style={style.profileButton}
                 onPress={() => navigation.navigate("Settings" as never)}
               >
-                {userData.profileImage ? (
-                  <Image
-                    source={{ uri: userData.profileImage }}
-                    style={style.profileImage}
-                  />
-                ) : (
-                  <View style={style.profilePlaceholder}>
-                    <MaterialIcons name="person" size={20} color="#FFF" />
-                  </View>
-                )}
+                <View style={style.profilePlaceholder}>
+                  <MaterialIcons name="person" size={20} color="#FFF" />
+                </View>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={style.greetingContainer}>
             <View>
-              <Text style={style.greeting}>Olá, {userData.name}!</Text>
-              <Text style={style.welcomeText}>Bem-vindo a sua republica</Text>
+              <Text style={style.greeting}>Olá, {userName}!</Text>
+              <Text style={style.welcomeText}>Bem-vindo a sua república</Text>
             </View>
             <View style={style.dateContainer}>
               <Text style={style.dateLabel}>Hoje</Text>
@@ -169,7 +170,7 @@ export default function Dashboard() {
         {/* SALDO */}
         <View style={style.balanceCard}>
           <View style={style.balanceHeader}>
-            <Text style={style.balanceTitle}>Saldo da Republica</Text>
+            <Text style={style.balanceTitle}>Saldo da República</Text>
             <MaterialIcons name="account-balance-wallet" size={24} color="#FFF" />
           </View>
           <Text style={style.balanceAmount}>
@@ -184,7 +185,7 @@ export default function Dashboard() {
               </Text>
             </View>
             <View style={style.balanceItem}>
-              <MaterialIcons name="arrow-downward" size={16} color={themas.colors.red} />
+              <MaterialIcons name="arrow-downward" size={16} color="#FFCDD2" />
               <Text style={style.balanceSpent}>
                 {formatCurrency(stats?.totalSaidasMes ?? 0)} gastos
               </Text>
@@ -215,7 +216,7 @@ export default function Dashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* PRÓXIMAS TAREFAS */}
+        {/* PRÓXIMAS TAREFAS*/}
         <View style={style.section}>
           <View style={style.sectionHeader}>
             <Text style={style.sectionTitle}>Próximas Tarefas</Text>
@@ -224,23 +225,29 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {upcomingTasks.map((task) => (
-            <View key={task.id} style={style.taskCard}>
-              <View style={style.taskLeft}>
-                <View style={[style.taskDot, { backgroundColor: getPriorityColor(task.priority) }]} />
-                <View style={style.taskInfo}>
-                  <Text style={style.taskTitle}>{task.title}</Text>
-                  <Text style={style.taskAssignee}>
-                    {task.assignedTo} - {task.date}
-                  </Text>
+          {tarefasDashboard.length > 0 ? (
+            tarefasDashboard.map((task) => (
+              <View key={task.id} style={style.taskCard}>
+                <View style={style.taskLeft}>
+                  <View style={[style.taskDot, { backgroundColor: getPriorityColor(task.prioridade) }]} />
+                  <View style={style.taskInfo}>
+                    <Text style={style.taskTitle}>{task.titulo}</Text>
+                    <Text style={style.taskAssignee}>
+                      {task.responsavelNome || "Sem responsável"} - {formatDate(task.dataPrazo)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[style.taskIconContainer, { borderColor: getPriorityColor(task.prioridade) }]}>
+                  <MaterialIcons name={getPriorityIcon(task.prioridade) as any} size={20} color={getPriorityColor(task.prioridade)} />
                 </View>
               </View>
-
-              <View style={[style.taskIconContainer, { borderColor: getPriorityColor(task.priority) }]}>
-                <MaterialIcons name={getPriorityIcon(task.priority) as any} size={20} color={getPriorityColor(task.priority)} />
-              </View>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={{ textAlign: 'center', color: '#999', marginVertical: 10 }}>
+              Nenhuma tarefa pendente.
+            </Text>
+          )}
         </View>
 
         {/* ATIVIDADE RECENTE */}
@@ -251,9 +258,9 @@ export default function Dashboard() {
             atividades.map((atividade, index) => (
               <View key={index} style={style.activityCard}>
                 <View style={style.activityProfile}>
-                  {atividade.fotoAutor ? (
+                  {atividade.autorFoto ? (
                     <Image
-                      source={{ uri: atividade.fotoAutor }}
+                      source={{ uri: atividade.autorFoto }}
                       style={style.profileImage}
                     />
                   ) : (
@@ -268,7 +275,9 @@ export default function Dashboard() {
                     <Text style={style.activityUserName}>{atividade.titulo}</Text>
                   </Text>
                   <Text style={style.activityDetails}>{atividade.descricao}</Text>
-                  <Text style={style.activityTime}>{atividade.tempoDecorrido}</Text>
+                  <Text style={style.activityTime}>
+                    {formatDate(atividade.dataHora)} - {atividade.tempoDecorrido || "Recente"}
+                  </Text>
                 </View>
               </View>
             ))

@@ -1,18 +1,18 @@
 import api from "./api";
+import { ConviteRequestDTO, ConviteResponseDTO } from "../types/membro.types";
 
-export async function fazerJoinNaRep(tokenUUID: string) {
-  try {
-    const response = await api.post("/convites/entrar", {
-      token: tokenUUID,
-    });
-
-    console.log("Resposta do backend:", response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error(
-      "Erro ao entrar na república:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
+interface JoinResponseDTO {
+  id: number;         
+  mensagem: string;   
+  tokenCadastro?: string;
 }
+
+export const gerarConvite = async (repId: number, dados: ConviteRequestDTO): Promise<ConviteResponseDTO> => {
+  const response = await api.post(`/reps/${repId}/convites`, dados);
+  return response.data;
+};
+
+export const entrarComConvite = async (token: string, usuarioId: number): Promise<JoinResponseDTO> => {
+  const response = await api.post("/convites/entrar", { token });
+  return response.data;
+};

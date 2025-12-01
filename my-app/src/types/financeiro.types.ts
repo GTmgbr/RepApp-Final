@@ -1,5 +1,3 @@
-// Tipos baseados nos DTOs do backend para Financeiro
-
 export interface FinanceiroResumoDTO {
   saldoTotalRep: number;
   saldos: SaldoMoradorDTO[];
@@ -11,22 +9,25 @@ export interface SaldoMoradorDTO {
   nome: string;
   fotoUrl: string | null;
   valor: number;
-  statusTexto: string; // "Deve receber" ou "Devedor"
+  statusTexto: string;
 }
 
 export interface DespesaDTO {
   id: number;
   descricao: string;
   valorTotal: number;
-  data: string; // formato "yyyy-MM-dd"
+  data: string;
   pagadorNome: string;
   valorPorPessoa: number;
 }
 
+export type TipoDespesa = 'GASTO' | 'PAGAMENTO';
+
 export interface DespesaRequestDTO {
   descricao: string;
   valorTotal: number;
-  data: string; // formato "yyyy-MM-dd"
-  comprovante?: string; // URL opcional
-  envolvidos: number[]; // Array de IDs dos usuários. Vazio [] = dividir entre todos
+  data: string;         
+  comprovanteUrl?: string; 
+  envolvidosIds: number[]; 
+  tipo: TipoDespesa;
 }

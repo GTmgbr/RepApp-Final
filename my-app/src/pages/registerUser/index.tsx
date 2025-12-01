@@ -11,6 +11,8 @@ import {
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { style } from "./styles";
+import api from "../../services/api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterUser() {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -19,61 +21,72 @@ export default function RegisterUser() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [telefone, setTelefone] = useState("");
+  const [curso, setCurso] = useState("");
   const [universidade, setUniversidade] = useState("");
   const [anoIngresso, setAnoIngresso] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // -------- Validações --------
   const validateEmail = (email: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
   };
 
-  const formatTelefone = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    if (numbers.length <= 10) {
-      return numbers.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
-    }
-    return numbers.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
-  };
-
   async function handleRegister() {
-  if (!nome || !email || !senha || !confirmarSenha || !telefone || !universidade || !anoIngresso) {
-    return Alert.alert("Atenção", "Preencha todos os campos obrigatórios!");
+    if (!nome || !email || !senha || !confirmarSenha || !universidade || !anoIngresso) {
+      return Alert.alert("Atenção", "Preencha todos os campos obrigatórios!");
+    }
+
+    if (!validateEmail(email)) {
+      return Alert.alert("Atenção", "Por favor, insira um email válido!");
+    }
+
+    if (senha !== confirmarSenha) {
+      return Alert.alert("Atenção", "As senhas não coincidem!");
+    }
+
+    try {
+      setLoading(true);
+
+      const payload = {
+        nomeCompleto: nome,
+        email: email,
+        senha: senha,
+        universidade: universidade,
+        ano: parseInt(anoIngresso),
+        curso: curso,
+        fotoUrl: ""
+      };
+
+      const response = await api.post("/auth/cadastro", payload);
+
+      const { token, id, nome: nomeUsuario, repId } = response.data;
+
+      await AsyncStorage.setItem('@token', token);
+      await AsyncStorage.setItem('@usuario', JSON.stringify({ id, nome: nomeUsuario }));
+
+      Alert.alert("Sucesso", "Bem-vindo ao RepApp!");
+
+      if (repId) {
+        await AsyncStorage.setItem('@repId', String(repId));
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'FirstAccess' }],
+        });
+      }
+
+    } catch (error: any) {
+      console.error(error);
+      const mensagem = error.response?.data?.message || "Falha ao cadastrar usuário!";
+      Alert.alert("Erro", mensagem);
+    } finally {
+      setLoading(false);
+    }
   }
-
-  if (!validateEmail(email)) {
-    return Alert.alert("Atenção", "Por favor, insira um email válido!");
-  }
-
-  if (senha !== confirmarSenha) {
-    return Alert.alert("Atenção", "As senhas não coincidem!");
-  }
-
-  try {
-    setLoading(true);
-
-    // Aqui vai futuramente a chamada da API
-    // await api.post("/auth/register", { ... })
-
-    Alert.alert(
-      "Sucesso",
-      "Usuário cadastrado com sucesso!",
-      [
-        {
-          text: "OK",
-          onPress: () => navigation.navigate("Register"), 
-        },
-      ]
-    );
-
-  } catch (error) {
-    Alert.alert("Erro", "Falha ao cadastrar usuário!");
-  } finally {
-    setLoading(false);
-  }
-}
 
   return (
     <ScrollView contentContainerStyle={style.container}>
@@ -106,17 +119,16 @@ export default function RegisterUser() {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            keyboardType="email-address"
           />
         </View>
 
         <View style={style.inputContainer}>
           <TextInput
             style={style.input}
-            placeholder="Telefone"
-            value={formatTelefone(telefone)}
-            onChangeText={(text) => setTelefone(text.replace(/\D/g, ""))}
-            keyboardType="numeric"
-            maxLength={15}
+            placeholder="Curso (Ex: Engenharia)"
+            value={curso}
+            onChangeText={setCurso}
           />
         </View>
 
@@ -134,8 +146,9 @@ export default function RegisterUser() {
             style={style.input}
             placeholder="Ano de ingresso"
             value={anoIngresso}
-            onChangeText={setAnoIngresso}
+            onChangeText={(t) => setAnoIngresso(t.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
+            maxLength={4}
           />
         </View>
 

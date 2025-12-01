@@ -1,29 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Text, TouchableOpacity, View, Linking, Alert } from "react-native";
 import { style } from "./styles";
 import { AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 export default function PrimeiroAcesso() {
-  const [repName, setRepName] = useState("Minha República Exemplo"); // Nome fixo por enquanto, pode virar input
+  const navigation = useNavigation<NavigationProp<any>>();
 
-  async function handleCadastrarRep() {
-    try {
-      // Salvar no armazenamento local
-      await AsyncStorage.setItem("@repName", repName);
+  useEffect(() => {
+    const checkRep = async () => {
+      const repId = await AsyncStorage.getItem('@repId');
+      if (repId) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
+      }
+    };
+    checkRep();
+  }, []);
 
-      // Enviar para API 
-      const response = await axios.post("https://suaapi.com/republicas", {
-        nome: repName,
-      });
-
-      Alert.alert("Sucesso", "República cadastrada com sucesso!");
-      console.log("Resposta da API:", response.data);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível cadastrar a república.");
-    }
+  function handleNavigateToRegisterRep() {
+    navigation.navigate("Register");
   }
 
   return (
@@ -34,8 +33,9 @@ export default function PrimeiroAcesso() {
       </View>
 
       <View style={style.content}>
+        {/* Opção 1: Entrar em uma rep existente (Futuro) */}
         <Text style={style.question}>A sua rep já foi cadastrada?</Text>
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity onPress={() => Alert.alert("Em breve", "A funcionalidade de entrar via link será implementada na próxima etapa.")}>
           <Text style={style.link}>
             • Contate o administrador da rep para {"\n"} obter o link de acesso. {"\n"}{"\n"}
           </Text>
@@ -44,7 +44,8 @@ export default function PrimeiroAcesso() {
         <View style={{ height: 20 }} />
 
         <Text style={style.question}>{"\n"}Deseja cadastrar uma rep?</Text>
-        <TouchableOpacity onPress={() => {}}>
+
+        <TouchableOpacity onPress={handleNavigateToRegisterRep}>
           <Text style={style.link}>
             • Cadastre a sua nova rep e organize {"\n"} tudo em um só lugar.
           </Text>
@@ -52,7 +53,7 @@ export default function PrimeiroAcesso() {
 
         <Text style={style.buttonLabel}>{"\n"}{"\n"}{"\n"}Cadastrar Rep</Text>
 
-        <TouchableOpacity style={style.button} onPress={handleCadastrarRep}>
+        <TouchableOpacity style={style.button} onPress={handleNavigateToRegisterRep}>
           <AntDesign name="plus" size={24} color="#fff" />
         </TouchableOpacity>
 

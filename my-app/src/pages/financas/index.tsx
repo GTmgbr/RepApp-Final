@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { style } from "./styles";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import MoradorSaldoCard from "../../components/MoradorSaldoCard";
@@ -28,13 +28,14 @@ export default function Financas() {
   // Função para carregar dados financeiros
   const loadFinanceiroData = async () => {
     try {
-      const repId = await AsyncStorage.getItem("repId");
+      const repId = await AsyncStorage.getItem("@repId");
 
       if (!repId) {
         console.error("RepId não encontrado no AsyncStorage");
         return;
       }
 
+      // Opcional: setLoading(true) aqui se quiser mostrar o spinner toda vez
       const data = await getResumoFinanceiro(Number(repId));
       setResumo(data);
     } catch (error) {
@@ -45,12 +46,14 @@ export default function Financas() {
     }
   };
 
-  // Carregar dados ao montar componente
-  useEffect(() => {
-    loadFinanceiroData();
-  }, []);
+  // USE FOCUS EFFECT: Recarrega os dados sempre que a tela ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      loadFinanceiroData();
+    }, [])
+  );
 
-  // Função de refresh
+  // Função de refresh manual (puxar pra baixo)
   const onRefresh = () => {
     setRefreshing(true);
     loadFinanceiroData();
@@ -58,11 +61,11 @@ export default function Financas() {
 
   // Função para formatar data (yyyy-MM-dd -> dd/MM/yyyy)
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
     const [year, month, day] = dateStr.split("-");
     return `${day}/${month}/${year}`;
   };
 
-  // Mostrar loading enquanto carrega
   if (loading) {
     return (
       <View style={[style.container, { justifyContent: "center", alignItems: "center" }]}>

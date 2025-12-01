@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { style } from "./styles";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { login } from "../../services/authService";
 import { AntDesign, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import api from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Login() {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -20,18 +22,59 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   async function getLogin() {
-    if (!email || !password) return alert("Informe email e senha!");
+    if (!email || !password) {
+      return Alert.alert("Atenção", "Informe email e senha!");
+    }
 
     try {
       setLoading(true);
-      const response = await login(email.trim().toLowerCase(), password.trim());
 
-      navigation.reset({
-      index: 0,
-      routes: [{ name: "MainTabs" }],
+      const response = await api.post("/auth/login", {
+        email: email.trim().toLowerCase(),
+        senha: password.trim()
       });
+
+      console.log("Login realizado:", response.data);
+
+      const { token, id, nome, repId } = response.data;
+
+      await AsyncStorage.setItem("@token", token);
+      await AsyncStorage.setItem("@usuario", JSON.stringify({ id, nome }));
+      if (repId) {
+        await AsyncStorage.setItem("@repId", String(repId));
+      } else {
+        await AsyncStorage.removeItem("@repId");
+      }
+
+      if (repId) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MainTabs" }],
+        });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Access" }],
+        });
+      }
+
     } catch (error: any) {
-      alert(error.message || "Erro no login");
+      console.error("Erro no login:", error);
+
+      let mensagem = "Não foi possível realizar o login.";
+
+      if (error.response) {
+        // O servidor respondeu com um status de erro (ex: 401, 403)
+        if (error.response.status === 401 || error.response.status === 403) {
+          mensagem = "Email ou senha incorretos.";
+        } else {
+          mensagem = error.response.data?.message || "Erro no servidor.";
+        }
+      } else if (error.request) {
+        mensagem = "Sem conexão com o servidor. Verifique sua internet ou o IP configurado.";
+      }
+
+      Alert.alert("Erro", mensagem);
     } finally {
       setLoading(false);
     }
@@ -58,6 +101,8 @@ export default function Login() {
           onChangeText={setEmail}
           placeholder="Email"
           placeholderTextColor="#8A8A8A"
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <TextInput
@@ -70,7 +115,7 @@ export default function Login() {
         />
       </View>
 
-      <TouchableOpacity style={style.button} onPress={getLogin}>
+      <TouchableOpacity style={style.button} onPress={getLogin} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#FFF" />
         ) : (
@@ -84,7 +129,7 @@ export default function Login() {
         <View style={style.separatorLine} />
       </View>
 
-      <TouchableOpacity style={style.googleButton}>
+      <TouchableOpacity style={style.googleButton} onPress={() => Alert.alert("Em breve", "Login com Google")}>
         <AntDesign name="google" size={20} color="#000" />
         <Text style={style.googleButtonText}>Continuar com Google</Text>
       </TouchableOpacity>
